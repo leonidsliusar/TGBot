@@ -1,5 +1,7 @@
+import json
 from typing import Type
 
+import requests
 from dotenv import load_dotenv
 import os
 import openai
@@ -12,16 +14,15 @@ openai.organization = os.getenv('ORGANIZATION')
 
 
 def chat_request(message):
-    request = str(memcache.get_context(message.chat.id)) + message.text
-    print(request)
-    response = openai.Completion.create(
-        model="text-davinci-003",
-        prompt=request,
-        temperature=0.5,
+    chat_history = memcache.get_context(message.chat.id)
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{'role': 'user', 'content': f'{message.text}'}, {'role': 'system', 'content': f'{chat_history}'}],
+        temperature=0.8,
         max_tokens=250,
-        top_p=1.0,
-        frequency_penalty=0.5,
-        presence_penalty=0.0
+        stop=None,
+        frequency_penalty=1,
+        presence_penalty=1
     )
     return response
 
@@ -29,5 +30,16 @@ def chat_request(message):
 @memcache.set_cache
 def chat_response(message):
     response = chat_request(message)
-    deserialized_response = response.choices[0]['text']
+    deserialized_response = response.choices[0]['message']['content']
     return deserialized_response
+
+
+def model_list(API_KEY):
+    headers = {
+        'Authorization': f'Bearer {API_KEY}',
+    }
+    response = requests.get('https://api.openai.com/v1/engines', headers=headers)
+    print(response.text)
+
+if __name__ == '__main__':
+    model_list(openai.api_key)

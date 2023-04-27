@@ -16,6 +16,13 @@ class Cache(ABC):
 
 
 class CacheMem(Cache):
+    _MAX_CAPACITY: int = 50
+
+    def __new__(cls, *args, **kwargs):
+        if type(cls._MAX_CAPACITY) == int and cls._MAX_CAPACITY > 0:
+            return super().__new__(cls)
+        else:
+            raise AttributeError
 
     def __init__(self) -> None:
         self.cache: Dict[int, List] = {}
@@ -24,7 +31,7 @@ class CacheMem(Cache):
     def get_context(self, chat_id) -> str:
         if self.cache.get(chat_id):
             context_list = list(self.cache[chat_id])
-            res = '===CONTEXT START===' + ';'.join(context_list) + '===CONTEXT END==='
+            res = 'history of system response:\n' + ';'.join(context_list)
         else:
             res = ''
         return res
@@ -35,7 +42,7 @@ class CacheMem(Cache):
             if res:
                 if self.cache.get(message.chat.id, 0) == 0:
                     self.cache[message.chat.id] = deque()
-                if len(self.cache[message.chat.id]) > 10:
+                if len(self.cache[message.chat.id]) > self._MAX_CAPACITY:
                     self.cache[message.chat.id].popleft()
                 self.cache[message.chat.id].append(res)
             return res
