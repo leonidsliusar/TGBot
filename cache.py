@@ -17,23 +17,24 @@ class Cache(ABC):
 class CacheMem(Cache):
 
     def __init__(self) -> None:
-        self.cache: List[str] = []
+        self.cache: Dict[int, List] = {}
 
-    @property
-    def get_context(self) -> str:
-        if self.cache:
-            res = '===CONTEXT START===' + ';'.join(self.cache) + '===CONTEXT END==='
+
+    def get_context(self, chat_id) -> str:
+        if self.cache.get(chat_id):
+            res = '===CONTEXT START===' + ';'.join(self.cache[chat_id]) + '===CONTEXT END==='
         else:
             res = ''
         return res
 
     def set_cache(self, func: Callable[[str], str]) -> Callable[[str], str]:
-        def wrapper(message: str) -> str:
+        def wrapper(message) -> str:
             res = func(message)
             if res:
-                self.cache.append(res)
+                if self.cache.get(message.chat.id, 0) == 0:
+                    self.cache[message.chat.id] = []
+                self.cache[message.chat.id].append(res)
             return res
-
         return wrapper
 
 

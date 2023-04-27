@@ -11,8 +11,9 @@ openai.api_key = os.getenv('API_GPT')
 openai.organization = os.getenv('ORGANIZATION')
 
 
-def chat_request(message: str):
-    request = str(memcache.get_context) + message
+def chat_request(message):
+    request = str(memcache.get_context(message.chat.id)) + message.text
+    print(request)
     response = openai.Completion.create(
         model="text-davinci-003",
         prompt=request,
@@ -26,7 +27,7 @@ def chat_request(message: str):
 
 
 @memcache.set_cache
-def chat_response(message: str):
+def chat_response(message):
     response = chat_request(message)
     deserialized_response = response.choices[0]['text']
     return deserialized_response

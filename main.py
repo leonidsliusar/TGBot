@@ -85,7 +85,7 @@ async def give_answer(message: types.Message):
 
 @dp.message_handler()
 async def chat_gpt(message: types.Message):
-    response_from_chat = chat_response(message.text)
+    response_from_chat = chat_response(message)
     if not response_from_chat:
         response_from_chat = 'Sorry I didn\'t catch the words'
     await message.reply(response_from_chat)
