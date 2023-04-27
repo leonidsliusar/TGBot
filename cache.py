@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import deque
 from typing import Optional, List, Callable, Any, Dict
 
 
@@ -22,7 +23,8 @@ class CacheMem(Cache):
 
     def get_context(self, chat_id) -> str:
         if self.cache.get(chat_id):
-            res = '===CONTEXT START===' + ';'.join(self.cache[chat_id]) + '===CONTEXT END==='
+            context_list = list(self.cache[chat_id])
+            res = '===CONTEXT START===' + ';'.join(context_list) + '===CONTEXT END==='
         else:
             res = ''
         return res
@@ -32,7 +34,9 @@ class CacheMem(Cache):
             res = func(message)
             if res:
                 if self.cache.get(message.chat.id, 0) == 0:
-                    self.cache[message.chat.id] = []
+                    self.cache[message.chat.id] = deque()
+                if len(self.cache[message.chat.id]) > 10:
+                    self.cache[message.chat.id].popleft()
                 self.cache[message.chat.id].append(res)
             return res
         return wrapper

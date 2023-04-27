@@ -42,6 +42,7 @@ def get_exercise(n: int) -> tuple[str, bytes, str]:
     response = session.get(url_questions + f'&LN={n}')
     soup = BeautifulSoup(response.text, 'html.parser')
     table = soup.find('td', {'colspan': '2'})
+    table.a.decompose()
     description = table.get_text('\n', strip=True)
     questions_table = soup.find('td', {'rowspan': '2'})
     questions_table.center.decompose()
@@ -51,18 +52,18 @@ def get_exercise(n: int) -> tuple[str, bytes, str]:
     question = questions_table.get_text('\n', strip=True)
     answer = soup.find('textarea').get_text(strip=True)
     if __name__ == '__main__':
-        attachment = 'https://www.sql-ex.ru/help/select13.php?Lang=1#'
-        res = description + '\n' + attachment + '\n' + question
+        scheme = 'https://www.sql-ex.ru/help/select13.php?Lang=1#'
+        res = description + '\n' + scheme + '\n' + question
     else:
         table_name = re.search(r'"(.+)"', description).group(1)
         with open(f'db_scheme/{table_name}.png', 'rb') as pic:
             scheme = pic.read()
-        res = description + '\n' + question
+        res = description + '\n\n' + question
     return res, scheme, answer
 
 
 
 
-#get_login()
-#res, schema, answer = get_exercise(1)
+get_login()
+res, schema, answer = get_exercise(1)
 
