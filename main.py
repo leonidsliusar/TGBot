@@ -31,7 +31,7 @@ async def show_exercises(message: types.Message):
     else:
         last_question = quiz_cache.get_context(message.chat.id)
         response = 'I got really grand range of SQL questions\n'
-        for question in list_of_questions:
+        for question in list_of_questions.split(';'):
             response += f'/e{question} '
         response += f'\nThe last question was {str(last_question[0])}' if last_question != 0 \
         else ''

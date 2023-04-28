@@ -9,7 +9,7 @@ username = os.getenv('USERNAME_SQL')
 password = os.getenv('PASSWORD')
 url = 'https://sql-ex.ru/index.php'
 url_questions = 'https://www.sql-ex.ru/exercises/index.php?act=learn'
-
+user_agent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0'
 session = requests.Session()
 
 
@@ -19,22 +19,22 @@ def get_login() -> None:
         'psw': password
     }
     header = {
-        'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0'
+        'user-agent': user_agent
     }
     session.post(url, data=payload, headers=header)
 
 
-def get_list_exercises() -> list[str]:
+def get_list_exercises() -> str:
     response = session.get(url_questions)
     if str(response.status_code).startswith('5'):
-        res = '5xx'
+        res = '5xx;'
     else:
         soup = BeautifulSoup(response.text, 'html.parser')
         pivot_tag = soup.find('select', {'id': 'LN'})
         tags = pivot_tag.find_all('option', {'value': lambda x: x.isnumeric()})
-        res = []
+        res = ''
         for option in tags:
-            res.append(option['value'])
+            res += str(option['value']) + ';'
     return res
 
 
@@ -62,8 +62,6 @@ def get_exercise(n: int) -> tuple[str, bytes, str]:
     return res, scheme, answer
 
 
-
-
-get_login()
-res, schema, answer = get_exercise(1)
-
+if __name__ == '__main__':
+    get_login()
+    res, schema, answer = get_exercise(1)
