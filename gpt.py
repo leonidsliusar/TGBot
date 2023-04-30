@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import os
 import openai
 
-from cache import memcache
+from cache import cache
 
 load_dotenv()
 openai.api_key = os.getenv('API_GPT')
@@ -14,7 +14,7 @@ openai.organization = os.getenv('ORGANIZATION')
 
 
 def chat_request(message):
-    chat_history = memcache.get_context(message.chat.id)
+    chat_history = cache.get_context(message.chat.id)
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[{'role': 'user', 'content': f'{message.text}'}, {'role': 'system', 'content': f'{chat_history}'}],
@@ -27,7 +27,7 @@ def chat_request(message):
     return response
 
 
-@memcache.set_cache
+@cache.set_cache
 def chat_response(message):
     response = chat_request(message)
     deserialized_response = response.choices[0]['message']['content']

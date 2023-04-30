@@ -22,7 +22,7 @@ class TestCacheMem:
 
     @pytest.mark.parametrize('text1, text2, text3, chat_id',
                              [
-                                 ('test1 test1 test 1', 'test 2 test2 test2', 'test 3 test3', 1),
+                                 ('test1 test1 tests 1', 'tests 2 test2 test2', 'tests 3 test3', 1),
                              ])
     def test_memcache(self, text1, text2, text3, chat_id):
 
@@ -52,7 +52,7 @@ class TestCacheMem:
         assert memcache.get_context(chat_id) == result_string
 
     @pytest.mark.xfail(raises=AttributeError)
-    @pytest.mark.parametrize('capacity', [-5, 1.5, 'test'])
+    @pytest.mark.parametrize('capacity', [-5, 1.5, 'tests'])
     def test_constraint_memcache(self, capacity, monkeypatch):
         monkeypatch.setattr(CacheMem, '_MAX_CAPACITY', capacity)
         print(capacity)

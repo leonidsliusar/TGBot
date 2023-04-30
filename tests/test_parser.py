@@ -62,7 +62,7 @@ class TestParser:
 
     @pytest.mark.parametrize('test_url, expected_result', [
                                                         ('Server Error', '5xx'),
-                                                        ('some_url', 'test')
+                                                        ('some_url', 'tests')
     ])
     def test_get_list_exercises(self, test_url, expected_result, monkeypatch):
         session = MockSession(expected_result)
