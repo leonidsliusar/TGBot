@@ -17,7 +17,6 @@ db_name = 'db_test'
 @pytest.fixture
 def setup_and_teardown_db(monkeypatch):
     mock_engine = create_engine(f'postgresql://{login}:{password}@{host}/{db_name}')
-    monkeypatch.setenv('DB_NAME', db_name)
     create_database(mock_engine.url)
     Base.metadata.create_all(mock_engine)
     mock_session = Session(mock_engine)

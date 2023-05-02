@@ -3,6 +3,7 @@ from collections import deque
 from typing import Optional, List, Callable, Any, Dict, Type
 from sqlalchemy import select, insert
 from sql_schema import Chat, Messages, session as ses
+from config import MAX_CAPACITY_MEM_CACHE, CACHE_TYPE
 
 
 class Cache(ABC):
@@ -18,13 +19,13 @@ class Cache(ABC):
 
 
 class CacheMem(Cache):
-    _MAX_CAPACITY: int = 50
+    _MAX_CAPACITY: int = MAX_CAPACITY_MEM_CACHE
 
     def __new__(cls, *args, **kwargs):
         if type(cls._MAX_CAPACITY) == int and cls._MAX_CAPACITY > 0:
             return super().__new__(cls)
         else:
-            raise AttributeError
+            raise ValueError('check the variable MAX_CAPACITY_MEM_CACHE in config.py')
 
     def __init__(self) -> None:
         self.cache: Dict[int, List] = {}
@@ -106,6 +107,7 @@ class CacheDB(Cache):
 
     def get_context(self, chat_id) -> str:
         chat_id = chat_id
+        res = ''
         with ses as session:
             if session.execute(select(Chat.id).where(Chat.id == chat_id)).first():
                 messages = session.execute(select(Messages.message).where(Messages.chat_id == chat_id)).scalars()
@@ -115,6 +117,7 @@ class CacheDB(Cache):
 
 
 class CacheControl:
+
     @staticmethod
     def new_cache(type: str) -> Cache:
         if type == 'mem':
@@ -123,8 +126,10 @@ class CacheControl:
             cache = CacheQuiz()
         elif type == 'db':
             cache = CacheDB()
+        else:
+            return CacheMem()
         return cache
 
 
-cache = CacheControl.new_cache('mem')
+cache = CacheControl.new_cache(CACHE_TYPE)
 quiz_cache = CacheControl.new_cache('quiz')
