@@ -1,10 +1,5 @@
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-
-import sql_schema
-from cache_module import cache, CacheMem, quiz_cache, CacheControl
-from sql_schema import Base, Chat, Messages
+from cache_module import cache, CacheMem, quiz_cache
 
 
 class MockObjChat:

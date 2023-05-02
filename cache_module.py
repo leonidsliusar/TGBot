@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import deque
 from typing import Optional, List, Callable, Any, Dict, Type
-
 from sqlalchemy import select, insert
 from sql_schema import Chat, Messages, session as ses
 
@@ -69,7 +68,7 @@ class CacheDB(Cache):
     def set_cache(self, func: Callable[[Type[Messages]], str]) -> Callable[[Type[Messages]], str]:
         def wrapper(message):
             res = func(message)
-            if res:
+            if res and type(res) == str:
                 chat_id = message.chat.id
                 message = res
                 with ses as session:

@@ -1,32 +1,56 @@
-from cache_module import CacheDB
 import pytest
+
+from cache_module import CacheDB
 import cache_module
 
 
-class MockObjChat:
-    def __init__(self, chat_id):
-        self.id = chat_id
-
-
-class MockMessage:
-    def __init__(self, text, chat_id):
-        self.text = text
-        self.chat = MockObjChat(chat_id)
-
-
-def mock_message(text, chat_id):
-    return MockMessage(text, chat_id)
-
-
-def mock_func(message):
-    return message.text
-
-
 class TestDB:
-    def test_set_get_cache(self, monkeypatch, setup_and_teardown, text='test', chat_id=1):
-        monkeypatch.setattr(cache_module, 'ses', setup_and_teardown)
+    @pytest.mark.parametrize('text_user_1_1, text_user_1_2, chat_id_user_1, text_user_2_1, text_user_2_2, chat_id_user_2',
+    [
+                            ('test_1_user_1', 'test_2_user_1', 1, 'test_1_user_2', 'test_2_user_2', 2)
+    ])
+    def test_set_get_cache(self, monkeypatch, setup_and_teardown_db, mock_func, mock_message,
+                           text_user_1_1, text_user_1_2, chat_id_user_1,
+                           text_user_2_1, text_user_2_2, chat_id_user_2):
+        monkeypatch.setattr(cache_module, 'ses', setup_and_teardown_db)
         cache = CacheDB()
-        message = mock_message(text, chat_id)
+        message_user_1_1 = mock_message(text_user_1_1, chat_id_user_1)
+        message_user_1_2 = mock_message(text_user_1_2, chat_id_user_1)
         decorator = cache.set_cache(mock_func)
-        decorator(message)
-        assert cache.get_context(chat_id) == 'history of system response:\n' + text
+        decorator(message_user_1_1)
+        assert cache.get_context(chat_id_user_1) == 'history of system response:\n' + text_user_1_1
+        decorator(message_user_1_2)
+        assert cache.get_context(chat_id_user_1) == 'history of system response:\n' + text_user_1_1 + ';' + text_user_1_2
+        message_user_2_1 = mock_message(text_user_2_1, chat_id_user_2)
+        message_user_2_2 = mock_message(text_user_2_2, chat_id_user_2)
+        decorator(message_user_2_1)
+        assert cache.get_context(chat_id_user_2) == 'history of system response:\n' + text_user_2_1
+        decorator(message_user_2_2)
+        assert cache.get_context(chat_id_user_2) == 'history of system response:\n' + text_user_2_1 + ';' + text_user_2_2
+
+    @pytest.mark.skip
+    @pytest.mark.parametrize(
+        'text_user_1_1, text_user_1_2, chat_id_user_1, text_user_2_1, text_user_2_2, chat_id_user_2',
+        [
+            ('test_1_user_1', True, 1, 123456, 'test_2_user_2', 2)
+        ])
+    def test_set_get_cache_message_not_string(self, monkeypatch, setup_and_teardown_db, mock_func, mock_message,
+                           text_user_1_1, text_user_1_2, chat_id_user_1,
+                           text_user_2_1, text_user_2_2, chat_id_user_2):
+        monkeypatch.setattr(cache_module, 'ses', setup_and_teardown_db)
+        cache = CacheDB()
+        message_user_1_1 = mock_message(text_user_1_1, chat_id_user_1)
+        message_user_1_2 = mock_message(text_user_1_2, chat_id_user_1)
+        decorator = cache.set_cache(mock_func)
+        decorator(message_user_1_1)
+        assert cache.get_context(chat_id_user_1) == 'history of system response:\n' + text_user_1_1
+        decorator(message_user_1_2)
+        assert cache.get_context(
+            chat_id_user_1) == 'history of system response:\n' + text_user_1_1
+        message_user_2_1 = mock_message(text_user_2_1, chat_id_user_2)
+        message_user_2_2 = mock_message(text_user_2_2, chat_id_user_2)
+        decorator(message_user_2_1)
+        assert cache.get_context(chat_id_user_2) == 'history of system response:\n'
+        decorator(message_user_2_2)
+        assert cache.get_context(
+            chat_id_user_2) == 'history of system response:\n' + text_user_2_2
