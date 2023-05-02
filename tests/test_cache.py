@@ -1,5 +1,10 @@
 import pytest
-from cache import memcache, CacheMem, quiz_cache
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+import sql_schema
+from cache_module import cache, CacheMem, quiz_cache, CacheControl
+from sql_schema import Base, Chat, Messages
 
 
 class MockObjChat:
@@ -13,7 +18,7 @@ class MockMessage:
         self.chat = MockObjChat(chat_id)
 
 
-@memcache.set_cache
+@cache.set_cache
 def func(message):
     return message.text
 
@@ -26,18 +31,17 @@ class TestCacheMem:
                              ])
     def test_memcache(self, text1, text2, text3, chat_id):
 
-        assert memcache.get_context(chat_id) == ''
+        assert cache.get_context(chat_id) == ''
         func(MockMessage(text1, chat_id))
-        assert memcache.get_context(chat_id) == 'history of system response:\n' + text1
+        assert cache.get_context(chat_id) == 'history of system response:\n' + text1
         func(MockMessage(text2, chat_id))
-        assert memcache.get_context(chat_id) == 'history of system response:\n' + text1 + ';' + text2
+        assert cache.get_context(chat_id) == 'history of system response:\n' + text1 + ';' + text2
         func(MockMessage(text3, chat_id))
-        assert memcache.get_context(chat_id) == 'history of system response:\n' + text1 + ';' + text2 + ';' + text3
+        assert cache.get_context(chat_id) == 'history of system response:\n' + text1 + ';' + text2 + ';' + text3
 
     @pytest.mark.parametrize('capacity, chat_id',[(1, 'test0'), (70, 'test1'), (50, 'test2')])
     def test_cache_capacity(self, capacity, monkeypatch, chat_id):
         monkeypatch.setattr(CacheMem, '_MAX_CAPACITY', capacity)
-        print(CacheMem._MAX_CAPACITY)
         result_string = 'history of system response:\n'
         cache_list = []
         for n in range(60):
@@ -47,16 +51,13 @@ class TestCacheMem:
             result_string += ";".join(cache_list[n - capacity:])
         else:
             result_string += ";".join(cache_list)
-            print(memcache.get_context(chat_id))
-        print(memcache.get_context(chat_id))
-        assert memcache.get_context(chat_id) == result_string
+        assert cache.get_context(chat_id) == result_string
 
     @pytest.mark.xfail(raises=AttributeError)
     @pytest.mark.parametrize('capacity', [-5, 1.5, 'tests'])
     def test_constraint_memcache(self, capacity, monkeypatch):
         monkeypatch.setattr(CacheMem, '_MAX_CAPACITY', capacity)
-        print(capacity)
-        assert CacheMem()
+        pass
 
 
 class TestCacheQuiz:

@@ -1,5 +1,5 @@
 import re
-from cache import quiz_cache
+from cache_module import quiz_cache
 from aiogram import Bot, Dispatcher, executor, types, filters
 import logging
 from dotenv import load_dotenv

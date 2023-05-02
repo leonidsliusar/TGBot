@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from collections import deque
 from typing import Optional, List, Callable, Any, Dict, Type
-from sqlalchemy.orm import Session
-from db import engine, Chat, Messages
+
+from sqlalchemy import select, insert
+from sql_schema import Chat, Messages, session as ses
 
 
 class Cache(ABC):
@@ -71,48 +72,46 @@ class CacheDB(Cache):
             if res:
                 chat_id = message.chat.id
                 message = res
-                with Session(engine) as session:
-                    if session.query(Chat).filter(chat_id == chat_id).exists().scalar():
-                        new_message = Messages(
-                            chat_id=chat_id,
-                            message=message
-                        )
+                with ses as session:
+                    if session.execute(select(Chat.id).where(Chat.id == chat_id)).first():
                         try:
-                            session.add(new_message)
-                        except:
-                            session.rollback()
-                            raise ConnectionError
-                        else:
+                            session.execute(
+                                insert(Messages),
+                                [
+                                    {'chat_id': chat_id, 'message': message}
+                                ],
+                            )
                             session.commit()
+                        except ValueError:
+                            session.rollback()
+                            print(f'Invalid data {chat_id} {message}')
                     else:
-                        new_chat = Chat(
-                            chat_id=chat_id,
-                            messages=message
-                        )
-                        new_message = Messages(
-                            chat_id=chat_id,
-                            message=message
-                        )
                         try:
-                            session.add(new_chat, new_message)
-                        except:
-                            session.rollback()
-                            raise ConnectionError
-                        else:
+                            session.execute(
+                                insert(Chat),
+                                [
+                                    {'id': int(chat_id)}
+                                ],
+                            )
+                            session.execute(
+                                insert(Messages),
+                                [
+                                    {'chat_id': int(chat_id), 'message': message}
+                                ],
+                            )
                             session.commit()
+                        except ValueError:
+                            session.rollback()
+                            print(f'Invalid data {chat_id} {message}')
         return wrapper
 
     def get_context(self, chat_id) -> str:
         chat_id = chat_id
-        with Session(engine) as session:
-            res = ''
-            if session.query(Chat.query.filter(chat_id == chat_id).exists()).scalar():
-                query = session.query(Messages.message).filter_by(chat_id=chat_id)
-                messages = session.execute(query)
-                messages_string = ''
-                for message in messages:
-                    messages_string += message['massege'] + ';'
-                res = 'history of system response:\n' + messages_string
+        with ses as session:
+            if session.execute(select(Chat.id).where(Chat.id == chat_id)).first():
+                messages = session.execute(select(Messages.message).where(Messages.chat_id == chat_id)).scalars()
+                messages_string = ";".join(list(messages))
+                res = 'history of system response:\n' + f'{messages_string}'
             return res
 
 
@@ -128,6 +127,5 @@ class CacheControl:
         return cache
 
 
-# Config
-cache = CacheControl.new_cache('db')
+cache = CacheControl.new_cache('mem')
 quiz_cache = CacheControl.new_cache('quiz')

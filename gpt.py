@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import os
 import openai
 
-from cache import cache
+from cache_module import cache
 
 load_dotenv()
 openai.api_key = os.getenv('API_GPT')
