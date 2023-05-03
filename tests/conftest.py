@@ -48,3 +48,66 @@ def mock_func():
     def wrapper(message):
         return message.text
     return wrapper
+
+
+class MockSession:
+    __slots__ = ['url', 'data', 'headers', 'text']
+
+    def __init__(self, text):
+        self.url = None
+        self.data = None
+        self.headers = None
+        self.text = text
+
+    def post(self, url, data, headers):
+        self.url = url
+        self.data = data
+        self.headers = headers
+
+    def get(self, url):
+        if url == 'Server Error':
+            return MockResponse('500', self.text)
+        else:
+            return MockResponse('200', self.text)
+
+
+class MockResponse:
+    __slots__ = ['status_code', 'text']
+
+    def __init__(self, status_code, text):
+        self.status_code = status_code
+        self.text = text
+
+
+class MockBeautifulSoup:
+    def __init__(self, text, parser):
+        self.text = text
+        self.parser = parser
+        self.a = MockBS_tag()
+        self.center = MockBS_tag()
+        self.div = MockBS_tag()
+
+    def find(self, *args):
+        return self
+
+    def find_all(self, *args):
+        return [{'value': self.text}]
+
+    def get_text(self, *args, **kwargs):
+        return f'\"{self.text}\"'
+
+class MockBS_tag:
+
+    def decompose(self):
+        pass
+
+@pytest.fixture
+def set_session():
+    def wrapper(text):
+        return MockSession(text)
+    return wrapper
+
+
+@pytest.fixture
+def get_instance_mock_beauty_soup():
+    return MockBeautifulSoup
