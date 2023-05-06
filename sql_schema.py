@@ -1,8 +1,7 @@
 import os
 from typing import List
 from sqlalchemy.orm import declarative_base, Session
-from sqlalchemy_utils import database_exists, create_database
-from sqlalchemy import create_engine, Integer, String, ForeignKey
+from sqlalchemy import create_engine, Integer, ForeignKey, Text
 from dotenv import load_dotenv
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,7 +33,7 @@ class Messages(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     chat_id: Mapped[int] = mapped_column(ForeignKey('chats.id', ondelete='CASCADE'))
     chat: Mapped["Chat"] = relationship("Chat", back_populates='messages')
-    message: Mapped[str] = mapped_column(String)
+    message: Mapped[str] = mapped_column(Text)
 
     def __repr__(self):
         return f'{self.id}, {self.message}'

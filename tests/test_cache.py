@@ -80,6 +80,8 @@ class TestDB:
         decorator(message_user_2_2)
         assert cache.get_context(
             chat_id_user_2) == 'history of system response:\n' + text_user_2_1 + ';' + text_user_2_2
+        assert cache.get_context(
+            chat_id_user_2, last_message_only=True) == text_user_2_2
 
     @pytest.mark.parametrize('text_user_1_1, text_user_1_2, chat_id_user_1,'
                              ' text_user_2_1, text_user_2_2, chat_id_user_2',

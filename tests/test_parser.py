@@ -1,5 +1,4 @@
 import random
-
 import pytest
 import parser
 from parser import get_login, get_exercise, get_list_exercises

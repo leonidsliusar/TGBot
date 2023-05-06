@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 from collections import deque
 from typing import Optional, List, Callable, Any, Dict, Type
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, desc, delete
 from sql_schema import Chat, Messages, session as ses
-from config import MAX_CAPACITY_MEM_CACHE, CACHE_TYPE
+from config import MAX_CAPACITY_MEM_CACHE
+from logging_config import logger
 
 
 class Cache(ABC):
@@ -82,9 +83,10 @@ class CacheDB(Cache):
                                 ],
                             )
                             session.commit()
+                            logger.info('New context was add success')
                         except ValueError:
                             session.rollback()
-                            print(f'Invalid data {chat_id} {message}')
+                            logger.debug(f'Invalid data {chat_id} {message}')
                     else:
                         try:
                             session.execute(
@@ -100,20 +102,35 @@ class CacheDB(Cache):
                                 ],
                             )
                             session.commit()
+                            logger.info('New chat and context was add success')
                         except ValueError:
                             session.rollback()
-                            print(f'Invalid data {chat_id} {message}')
+                            logger.debug(f'Invalid data {chat_id} {message}')
         return wrapper
 
-    def get_context(self, chat_id) -> str:
+    def get_context(self, chat_id, last_message_only=False, render_book=False) -> str:
         chat_id = chat_id
         res = ''
         with ses as session:
             if session.execute(select(Chat.id).where(Chat.id == chat_id)).first():
-                messages = session.execute(select(Messages.message).where(Messages.chat_id == chat_id)).scalars()
-                messages_string = ";".join(list(messages))
-                res = 'history of system response:\n' + f'{messages_string}'
+                if last_message_only:
+                    res = session.execute(select(Messages.message).order_by(
+                        desc(Messages.id)).where(Messages.chat_id == chat_id)).scalar()
+                elif render_book:
+                    messages = session.execute(select(Messages.message).where(Messages.chat_id == chat_id)).scalars()
+                    messages_string = ";".join(list(messages))
+                    res = messages_string
+                else:
+                    messages = session.execute(select(Messages.message).where(Messages.chat_id == chat_id)).scalars()
+                    messages_string = ";".join(list(messages))
+                    res = 'history of system response:\n' + f'{messages_string}'
             return res
+
+
+    def flush_context(self, chat_id):
+        with ses as session:
+            session.execute(delete(Messages).where(Messages.chat_id == chat_id))
+            session.commit()
 
 
 class CacheControl:
@@ -131,5 +148,6 @@ class CacheControl:
         return cache
 
 
-cache = CacheControl.new_cache(CACHE_TYPE)
+memcache = CacheControl.new_cache('mem')
+db_cache = CacheControl.new_cache('db')
 quiz_cache = CacheControl.new_cache('quiz')
