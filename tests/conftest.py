@@ -1,9 +1,14 @@
 import os
+import re
+
 import pytest
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy_utils import create_database, drop_database
+
+import cache_module
+from gpt import GPTFactoryAssistant
 from sql_schema import Base
 
 
@@ -46,7 +51,7 @@ def mock_message():
 
 @pytest.fixture
 def mock_func():
-    def wrapper(message):
+    def wrapper(instance, message):
         return message.text
     return wrapper
 
@@ -112,3 +117,5 @@ def set_session():
 @pytest.fixture
 def get_instance_mock_beauty_soup():
     return MockBeautifulSoup
+
+

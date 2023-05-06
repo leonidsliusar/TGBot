@@ -40,8 +40,8 @@ class CacheMem(Cache):
         return res
 
     def set_cache(self, func: Callable[[Type[Messages]], str]) -> Callable[[Type[Messages]], str]:
-        def wrapper(message) -> str:
-            res = func(message)
+        def wrapper(instance, message) -> str:
+            res = func(instance, message)
             if res:
                 if self.cache.get(message.chat.id, 0) == 0:
                     self.cache[message.chat.id] = deque()
@@ -68,8 +68,8 @@ class CacheQuiz(Cache):
 class CacheDB(Cache):
 
     def set_cache(self, func: Callable[[Type[Messages]], str]) -> Callable[[Type[Messages]], str]:
-        def wrapper(message):
-            res = func(message)
+        def wrapper(instance, message):
+            res = func(instance, message)
             if res and type(res) == str:
                 chat_id = message.chat.id
                 message = res

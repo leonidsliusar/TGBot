@@ -1,29 +1,27 @@
 import random
 import re
-
-import docx
 from aiogram.types import InputFile
-
 from cache_module import quiz_cache
 from aiogram import Bot, Dispatcher, executor, types, filters
 from dotenv import load_dotenv
 import os
-from gpt import chat_response
+from gpt import GPTFactoryAssistant, GPTFactoryWriter
 import parser as sql
-from gpt_writer import get_book
 from config import SYMBOLS_LENGTH_IN_BOOK as book_size
 
 load_dotenv()
 API_TOKEN = os.getenv('API_TELEGRAM')
 bot = Bot(API_TOKEN)
 dp = Dispatcher(bot)
+assistant = GPTFactoryAssistant.get_gpt()
+writer = GPTFactoryWriter.get_gpt()
 
 
 @dp.message_handler(commands=['help'])
-async def instuction(message: types.Message):
+async def greetings(message: types.Message):
     response = 'I accept to recognize native text.\nI can speak in big range of languages.' \
-               'You can just try it by typing something.'\
-                '\n\nI am able to write a book for you. You can learn more about this feature by text me /hwrite'\
+               'You can just try it by typing something.' \
+               '\n\nI am able to write a book for you. You can learn more about this feature by text me /hwrite' \
                '\n\nI also got some SQL-quiz. You can find out more by typing /hsql'
     await bot.send_message(chat_id=message.chat.id, text=response)
 
@@ -40,7 +38,7 @@ async def show_exercises(message: types.Message):
         for question in list_of_questions.split(';'):
             response += f'/e{question} '
         response += f'\nThe last question was {str(last_question[0])}' if last_question != 0 \
-        else ''
+            else ''
     await message.reply(response)
 
 
@@ -61,7 +59,7 @@ async def get_exercise(message: types.Message):
     n = int(re.findall(r'\d', message.text)[0])
     question, schema, answer = sql.get_exercise(n)
     chat_id = message.chat.id
-    quiz_cache.set_cache(chat_id, str(n)+answer)
+    quiz_cache.set_cache(chat_id, str(n) + answer)
     await message.reply(question)
     await bot.send_photo(chat_id=chat_id, photo=schema)
 
@@ -78,7 +76,7 @@ async def check_answer(message: types.Message):
     chat_id = message.chat.id
     correct_answer = quiz_cache.get_context(chat_id)[1:]
     user_answer = message.text
-    if user_answer.strip(" ").lower() == correct_answer.strip(" ").lower()\
+    if user_answer.strip(" ").lower() == correct_answer.strip(" ").lower() \
             and user_answer.strip(" ").upper() == correct_answer.strip(" ").upper():
         await bot.send_message(chat_id=chat_id, text='That\'s it')
         await show_exercises(message)
@@ -104,7 +102,7 @@ async def tell_me_more(message: types.Message):
                '\nAlso you can add in description size of book in symbols adding a numeric value.' \
                f'\nIf you aren\'t using numeric, it will produce book in default size {book_size} symbols.' \
                '\n<b>But if you are using numeric in query be sure that first numeric it\'s size of book!</b>' \
-               '\n\n✅<b>Correct example for book with 5000 symbols:'\
+               '\n\n✅<b>Correct example for book with 5000 symbols:' \
                '\n/write 5000 a horror book about lost in forest in Steven King\'s style' \
                '\n\n✅Correct example for book with 100 symbols:' \
                '\n/write a short story about animals in 100 symbols\'s</b>' \
@@ -117,7 +115,7 @@ async def tell_me_more(message: types.Message):
 
 @dp.message_handler(commands=['write'])
 async def gpt_writer(message: types.Message):
-    buffer = get_book(message)
+    buffer = writer.get_book(message)
     if not buffer:
         response_from_chat = 'Sorry I didn\'t catch the words. Can you tell me more detail'
         await message.reply(response_from_chat)
@@ -128,7 +126,7 @@ async def gpt_writer(message: types.Message):
 
 @dp.message_handler()
 async def chat_gpt(message: types.Message):
-    response_from_chat = chat_response(message)
+    response_from_chat = assistant.chat_response(message)
     if not response_from_chat:
         response_from_chat = 'Sorry I didn\'t catch the words'
     await message.reply(response_from_chat)

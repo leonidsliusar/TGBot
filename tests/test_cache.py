@@ -1,9 +1,10 @@
 import pytest
 from cache_module import CacheMem, CacheDB, quiz_cache
 import cache_module
-
+from gpt import GPTFactoryAssistant
 
 class TestCacheMem:
+    instance = GPTFactoryAssistant.get_gpt()
 
     @pytest.mark.parametrize('text1, text2, text3, chat_id',
                              [
@@ -16,11 +17,11 @@ class TestCacheMem:
         message3 = mock_message(text3, chat_id)
         assert cache.get_context(chat_id) == ''
         decorator = cache.set_cache(mock_func)
-        decorator(message1)
+        decorator(self.instance, message1)
         assert cache.get_context(chat_id) == 'history of system response:\n' + text1
-        decorator(message2)
+        decorator(self.instance, message2)
         assert cache.get_context(chat_id) == 'history of system response:\n' + text1 + ';' + text2
-        decorator(message3)
+        decorator(self.instance, message3)
         assert cache.get_context(chat_id) == 'history of system response:\n' + text1 + ';' + text2 + ';' + text3
 
     @pytest.mark.parametrize('capacity, chat_id', [(1, 'test0'), (70, 'test1'), (50, 'test2')])
@@ -32,7 +33,7 @@ class TestCacheMem:
         for n in range(60):
             decorator = cache.set_cache(mock_func)
             message = mock_message(str(n), chat_id)
-            decorator(message)
+            decorator(self.instance, message)
             cache_list.append(str(n))
         if capacity < n:
             result_string += ";".join(cache_list[n - capacity:])
@@ -55,6 +56,7 @@ class TestCacheQuiz:
 
 
 class TestDB:
+    instance = GPTFactoryAssistant.get_gpt()
     @pytest.mark.parametrize('text_user_1_1, text_user_1_2, chat_id_user_1,'
                              'text_user_2_1, text_user_2_2, chat_id_user_2',
                              [
@@ -68,16 +70,16 @@ class TestDB:
         message_user_1_1 = mock_message(text_user_1_1, chat_id_user_1)
         message_user_1_2 = mock_message(text_user_1_2, chat_id_user_1)
         decorator = cache.set_cache(mock_func)
-        decorator(message_user_1_1)
+        decorator(self.instance, message_user_1_1)
         assert cache.get_context(chat_id_user_1) == 'history of system response:\n' + text_user_1_1
-        decorator(message_user_1_2)
+        decorator(self.instance, message_user_1_2)
         assert cache.get_context(
             chat_id_user_1) == 'history of system response:\n' + text_user_1_1 + ';' + text_user_1_2
         message_user_2_1 = mock_message(text_user_2_1, chat_id_user_2)
         message_user_2_2 = mock_message(text_user_2_2, chat_id_user_2)
-        decorator(message_user_2_1)
+        decorator(self.instance, message_user_2_1)
         assert cache.get_context(chat_id_user_2) == 'history of system response:\n' + text_user_2_1
-        decorator(message_user_2_2)
+        decorator(self.instance, message_user_2_2)
         assert cache.get_context(
             chat_id_user_2) == 'history of system response:\n' + text_user_2_1 + ';' + text_user_2_2
         assert cache.get_context(
@@ -96,13 +98,13 @@ class TestDB:
         message_user_1_1 = mock_message(text_user_1_1, chat_id_user_1)
         message_user_1_2 = mock_message(text_user_1_2, chat_id_user_1)
         decorator = cache.set_cache(mock_func)
-        decorator(message_user_1_1)
+        decorator(self.instance, message_user_1_1)
         assert cache.get_context(chat_id_user_1) == ''
-        decorator(message_user_1_2)
+        decorator(self.instance, message_user_1_2)
         assert cache.get_context(chat_id_user_1) == ''
         message_user_2_1 = mock_message(text_user_2_1, chat_id_user_2)
         message_user_2_2 = mock_message(text_user_2_2, chat_id_user_2)
-        decorator(message_user_2_1)
+        decorator(self.instance, message_user_2_1)
         assert cache.get_context(chat_id_user_2) == ''
-        decorator(message_user_2_2)
+        decorator(self.instance, message_user_2_2)
         assert cache.get_context(chat_id_user_2) == ''

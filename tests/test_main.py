@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 import main
-from main import instuction
+from main import greetings
 
 
 class MockMessage:
@@ -28,5 +28,5 @@ class MockBot:
 async def test_instruction(message_id, text, monkeypatch):
     monkeypatch.setattr(main, 'bot', MockBot())
     message = MockMessage(message_id, text)
-    response = yield instuction(message)
+    response = yield greetings(message)
     assert response == text
