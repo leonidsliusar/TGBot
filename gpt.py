@@ -9,7 +9,7 @@ import re
 import time
 from docx import Document
 from cache_module import memcache, db_cache
-from config import SYMBOLS_LENGTH_IN_BOOK
+from config import SYMBOLS_LENGTH_IN_BOOK, TEXT_REWRITE_ITERATION
 from logging_config import logger
 
 
@@ -60,14 +60,36 @@ class GPTAssistant(GPT):
 
 class GPTWriter(GPT):
     default_symbol_length = SYMBOLS_LENGTH_IN_BOOK
+    iteration_quantity = TEXT_REWRITE_ITERATION
+
+    def rewrite_text(self, message):  # repeat the request for write text to AI a few time to improve text quality
+        response = self.chat_request(message.text)
+        n = 1
+        while n != self.iteration_quantity:
+            page_text = response.choices[0]['message']['content']
+            logger.info(f'Iteration in rewriter {n}: {page_text}')
+            try:
+                response = self.chat_request(
+                    'Rewrite this text with more detail and fixing grammatical errors, but in the same style'
+                    + page_text)
+                n += 1
+            except RateLimitError:
+                logger.info('RateLimitError!!!!!')
+                time.sleep(40)
+                response = self.chat_request(
+                    'Rewrite this text with more detail and fixing grammatical errors, but in the same style'
+                    + page_text)
+                n += 1
+        return response
 
     @db_cache.set_cache
     def chat_response_writer(self, message):  # sending request to AI, return only one page and caching it in DB
-        response = self.chat_request(message.text)
+        #response = self.chat_request(message.text)
+        response = self.rewrite_text(message)
         page = response.choices[0]['message']['content']
         return page
 
-    def parse_message(self, message):
+    def parse_message(self, message):  # parse message to three variable and return it to send_to_writer func
         symbol_length = re.search('\d+', message.text)
         pattern = re.compile('(\d+|symbols|/)')
         message_text = pattern.sub('', message.text)
@@ -76,13 +98,8 @@ class GPTWriter(GPT):
         length_book = len(db_cache.get_context(message.chat.id, render_book=True))
         return book_size, message_content, length_book
 
-    def send_to_writer(self, message):  # sending request to continue the storyline
-        symbol_length = re.search('\d+', message.text)
-        pattern = re.compile('(\d+|symbols|/)')
-        message_text = pattern.sub('', message.text)
-        message_content = re.sub(' +', ' ', message_text)
-        book_size = int(symbol_length.group(0)) if symbol_length else self.default_symbol_length
-        length_book = len(db_cache.get_context(message.chat.id, render_book=True))
+    def send_to_writer(self, message):  # sending request to continue the storyline until
+        book_size, message_content, length_book = self.parse_message(message)
         while length_book < book_size:
             if length_book == 0:
                 logger.debug(f'Book length: {length_book}')

@@ -8,6 +8,7 @@ import os
 from gpt import GPTFactoryAssistant, GPTFactoryWriter
 import parser as sql
 from config import SYMBOLS_LENGTH_IN_BOOK as book_size
+from logging_config import logger
 
 load_dotenv()
 API_TOKEN = os.getenv('API_TELEGRAM')
@@ -54,7 +55,7 @@ async def tell_me_more(message: types.Message):
     await message.reply(response)
 
 
-@dp.message_handler(filters.RegexpCommandsFilter(regexp_commands=['e([\d]{1,3})']))
+@dp.message_handler(filters.RegexpCommandsFilter(regexp_commands=['e([\\d]{1,3})']))
 async def get_exercise(message: types.Message):
     n = int(re.findall(r'\d', message.text)[0])
     question, schema, answer = sql.get_exercise(n)
@@ -115,13 +116,17 @@ async def tell_me_more(message: types.Message):
 
 @dp.message_handler(commands=['write'])
 async def gpt_writer(message: types.Message):
-    buffer = writer.get_book(message)
-    if not buffer:
-        response_from_chat = 'Sorry I didn\'t catch the words. Can you tell me more detail'
-        await message.reply(response_from_chat)
-    buffer.seek(0)
-    book = InputFile(buffer, filename='new_book.docx')
-    await bot.send_document(chat_id=message.chat.id, document=book, caption='Your new book')
+    try:
+        buffer = writer.get_book(message)
+        if not buffer:
+            response_from_chat = 'Sorry I didn\'t catch the words. Can you tell me more detail'
+            await message.reply(response_from_chat)
+        buffer.seek(0)
+        book = InputFile(buffer, filename='new_book.docx')
+        await bot.send_document(chat_id=message.chat.id, document=book, caption='Your new book')
+    except Exception as e:
+        logger.error(e)
+        await bot.send_message(chat_id=message.chat.id, text='Server is down. Try later')
 
 
 @dp.message_handler()
