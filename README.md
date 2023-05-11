@@ -45,22 +45,22 @@ User can use /sql_answer and bot will send correct answer.
 
 # Environment configuration
 
-API_TELEGRAM    |set API key for telegram (https://t.me/botfather)
+API_TELEGRAM--->|set API key for telegram (https://t.me/botfather)
 
-API_GPT         |set API key for openai (https://platform.openai.com/overview)
+API_GPT-------->|set API key for openai (https://platform.openai.com/overview)
 
-ORGANIZATION    |set organization code for openai (https://platform.openai.com/overview)
+ORGANIZATION--->|set organization code for openai (https://platform.openai.com/overview)
 
-USERNAME_SQL    |set username to sql questions recource (https://www.sql-ex.com/?Lang=1)
+USERNAME_SQL--->|set username to sql questions recource (https://www.sql-ex.com/?Lang=1)
 
-PASSWORD        |set password to sql questions recource (https://www.sql-ex.com/?Lang=1)
+PASSWORD------->|set password to sql questions recource (https://www.sql-ex.com/?Lang=1)
 
-DB              |set DBMS ('postgres'|'mysql'|etc)
+DB------------->|set DBMS ('postgres'|'mysql'|etc)
 
-DB_LOGIN        |set username of DB ('postgres')
+DB_LOGIN------->|set username of DB ('postgres')
 
-DB_PASS         |set password of DB ('password')
+DB_PASS-------->|set password of DB ('password')
 
-DB_HOST         |set database's IP  ('127.0.0.1')
+DB_HOST-------->|set database's IP  ('127.0.0.1')
 
-DB_NAME         |set name of db ('db_name')
+DB_NAME-------->|set name of db ('db_name')
