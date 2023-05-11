@@ -44,8 +44,11 @@ User can use /sql_answer and bot will send correct answer.
 ![image](https://github.com/leonidsliusar/TGBot/assets/128726342/526e4ed8-6919-4d97-9c0b-f873a83df0be)
 
 # Environment configuration
+
 API_TELEGRAM    |set API key for telegram (https://t.me/botfather)
+
 API_GPT         |set API key for openai (https://platform.openai.com/overview)
+
 ORGANIZATION    |set organization code for openai (https://platform.openai.com/overview)
 USERNAME_SQL    |set username to sql questions recource (https://www.sql-ex.com/?Lang=1)
 PASSWORD        |set password to sql questions recource (https://www.sql-ex.com/?Lang=1)
