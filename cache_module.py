@@ -1,13 +1,11 @@
+import typing
 from abc import ABC, abstractmethod
 from collections import deque
 from typing import Optional, List, Callable, Any, Dict, Type
 from sqlalchemy import select, insert, desc, delete
 from sql_schema import Chat, Messages, session as ses
 from config import MAX_CAPACITY_MEM_CACHE
-from logging_config import logger_main
 
-
-logger = logger_main
 
 class Cache(ABC):
     __slots__ = ['cache']
@@ -31,7 +29,7 @@ class CacheMem(Cache):
             raise ValueError('check the variable MAX_CAPACITY_MEM_CACHE in config.py')
 
     def __init__(self) -> None:
-        self.cache: Dict[int, List] = {}
+        self.cache: Dict[int, typing.Deque] = {}
 
     def get_context(self, chat_id) -> str:
         if self.cache.get(chat_id):
@@ -41,10 +39,9 @@ class CacheMem(Cache):
             res = ''
         return res
 
-    def set_cache(self, func: Callable[[Type[Messages]], str]) -> Callable[[Type[Messages]], str]:
-        async def wrapper(instance, message) -> str:
+    def set_cache(self, func: Callable[[Type[Messages]], str]) -> typing.Coroutine:
+        async def wrapper(instance, message) -> typing.Awaitable[Any]:
             res = await func(instance, message)
-            logger.debug(f'Going to cache: {res}')
             if res:
                 if self.cache.get(message.chat.id, 0) == 0:
                     self.cache[message.chat.id] = deque()
@@ -104,10 +101,8 @@ class CacheDB(Cache):
                                 ],
                             )
                             session.commit()
-                            logger.info('New chat and context was add success')
                         except ValueError:
                             session.rollback()
-                            logger.debug(f'Invalid data {chat_id} {message}')
         return wrapper
 
     def get_context(self, chat_id, last_message_only=False, render_book=False) -> str:

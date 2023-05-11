@@ -1,18 +1,13 @@
-import asyncio
-import random
+from random import choice
 import re
-import time
-
-import aiohttp
+from parser import parser
 from aiogram.types import InputFile
 from cache_module import quiz_cache
 from aiogram import Bot, Dispatcher, executor, types, filters
 from dotenv import load_dotenv
 import os
 from gpt import GPTFactoryAssistant, GPTFactoryWriter
-import parser as sql
 from config import SYMBOLS_LENGTH_IN_BOOK as book_size
-from logging_config import logger_main
 
 load_dotenv()
 API_TOKEN = os.getenv('API_TELEGRAM')
@@ -20,7 +15,6 @@ bot = Bot(API_TOKEN)
 dp = Dispatcher(bot)
 assistant = GPTFactoryAssistant.get_gpt()
 writer = GPTFactoryWriter.get_gpt()
-logger = logger_main
 
 
 @dp.message_handler(commands=['help'])
@@ -34,46 +28,51 @@ async def greetings(message: types.Message):
 
 @dp.message_handler(commands=['sql'])
 async def show_exercises(message: types.Message):
-    sql.get_login()
-    list_of_questions = sql.get_list_exercises()
+    chat_id = message.chat.id
+    list_of_questions = await parser.get_list_exercises
     if list_of_questions == '5xx':
         response = 'Server with questions is dead. Try later please'
     else:
         last_question = quiz_cache.get_context(message.chat.id)
         response = 'I got really grand range of SQL questions\n'
         for question in list_of_questions.split(';'):
-            response += f'/e{question} '
+            if question:
+                response += f'/e{question} '
         response += f'\nThe last question was {str(last_question[0])}' if last_question != 0 \
             else ''
-    await message.reply(response)
+    await bot.send_message(chat_id=chat_id, text=response)
 
 
 @dp.message_handler(commands=['hsql'])
 async def tell_me_more(message: types.Message):
-    last_question = quiz_cache.get_context(message.chat.id)
+    chat_id = message.chat.id
+    last_question = quiz_cache.get_context(chat_id)
     remainder_string = f'\nThe last question was {str(last_question[0])}' if last_question != 0 \
         else f'\nYou didn\'t give me answer yet'
     response = 'I got some SQL-exercises. It\'s kinda quiz with a big range of different SQL query questions.' \
                '\nYou can try it for free. Just send me /sql' \
                '\nYou can take the right answer by sending me /sql_answer' \
                f'{remainder_string}'
-    await message.reply(response)
+    await bot.send_message(chat_id=chat_id, text=response)
 
 
-@dp.message_handler(filters.RegexpCommandsFilter(regexp_commands=['e([\\d]{1,3})']))
+@dp.message_handler(filters.RegexpCommandsFilter(regexp_commands=['e([\d]{1,3})']))
 async def get_exercise(message: types.Message):
-    n = int(re.findall(r'\d', message.text)[0])
-    question, schema, answer = sql.get_exercise(n)
-    chat_id = message.chat.id
-    quiz_cache.set_cache(chat_id, str(n) + answer)
-    await message.reply(question)
-    await bot.send_photo(chat_id=chat_id, photo=schema)
+    n = int(re.findall(r'\d{1,3}', message.text)[0])
+    try:
+        question, schema, answer = await parser.get_exercise(n)
+        chat_id = message.chat.id
+        quiz_cache.set_cache(chat_id, str(n) + answer)
+        await message.reply(question)
+        await bot.send_photo(chat_id=chat_id, photo=schema)
+    except TypeError:
+        await bot.send_message(chat_id=message.chat.id, text='Server is down. Try later')
 
 
 @dp.message_handler(regexp=re.compile(r'.*(thank you|thank\'s).*', re.IGNORECASE))
 async def send_emoji(message: types.Message):
     choices_list = ['💞', '❤️', '🔥', '🤝']
-    emoji = random.choice(choices_list)
+    emoji = choice(choices_list)
     await message.reply(emoji)
 
 

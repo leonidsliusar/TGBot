@@ -11,9 +11,6 @@ import time
 from docx import Document
 from cache_module import memcache, db_cache
 from config import SYMBOLS_LENGTH_IN_BOOK, TEXT_REWRITE_ITERATION
-from logging_config import logger_main
-
-logger = logger_main
 
 
 class GPT(ABC):
@@ -28,7 +25,6 @@ class GPT(ABC):
         self.content = content
 
     async def chat_request(self, message):
-        logger.debug(f'In chat_request {message}')
         response = await openai.ChatCompletion.acreate(
             model=self.model_property['model'],
             messages=[{'role': 'user', 'content': message}, {'role': 'system', 'content': self.content}],
@@ -46,21 +42,19 @@ class GPT(ABC):
             'Authorization': f'Bearer {openai.api_key}',
         }
         response = requests.get('https://api.openai.com/v1/engines', headers=headers)
-        print(response.text)
+        return response
 
 
 class GPTAssistant(GPT):
 
     async def chat_request(self, message):
         self.content = memcache.get_context(message.chat.id)
-        logger.debug(f'Coming from cache: {self.content}')
         return await super().chat_request(message.text)
 
     @memcache.set_cache
     async def chat_response(self, message):
         response = await self.chat_request(message)
         deserialized_response = response.choices[0]['message']['content']
-        logger.warning(f'Going to cache {deserialized_response}')
         return deserialized_response
 
 
@@ -71,8 +65,6 @@ class GPTWriter(GPT):
     async def rewrite_text(self, message):  # repeat the request for write text to AI a few time to improve text quality
         response = await self.chat_request(message.text)
         n = 1
-        logger.info(f'Iteration quantity: {n}')
-        logger.info(f'Iteration quantity settings: {self.iteration_quantity}')
         while n != self.iteration_quantity:
             page_text = response.choices[0]['message']['content']
             try:
@@ -80,13 +72,11 @@ class GPTWriter(GPT):
                     'Rewrite this text with more detail and fixing grammatical errors, but in the same style'
                     + page_text)
             except RateLimitError:
-                logger.info('RateLimitError!!!!!')
                 time.sleep(40)
                 response = await self.chat_request(
                     'Rewrite this text with more detail and fixing grammatical errors, but in the same style'
                     + page_text)
             n += 1
-            logger.info(f'Iteration in rewriter {n}')
         return response
 
     @db_cache.set_cache
@@ -107,7 +97,6 @@ class GPTWriter(GPT):
     async def send_to_writer(self, message):  # sending request to continue the storyline until
         book_size, message_content, length_book = self.parse_message(message)
         while length_book < book_size:
-            logger.debug(f'Cycle: {length_book} < {book_size}')
             if length_book == 0:
                 message.text = message_content
             else:
@@ -115,12 +104,10 @@ class GPTWriter(GPT):
                 message.text = 'Continue the story in the same style: ' + chunk
             try:
                 await self.chat_response_writer(message)
-                logger.debug(message.text)
             except RateLimitError:
                 await asyncio.sleep(30)
                 await self.chat_response_writer(message)
             length_book = len(db_cache.get_context(message.chat.id, render_book=True))
-            logger.debug(f'Book Length from DB: {length_book}')
         return
 
     async def render_book(self, message):  # rendering the book
@@ -131,7 +118,6 @@ class GPTWriter(GPT):
 
     async def get_book(self, message):  # send request to rendering book and return doc file as bytestring in buffer
         book_string = await self.render_book(message)
-        logger.debug(book_string)
         book = Document()
         book.add_paragraph(book_string)
         buffer = io.BytesIO()
