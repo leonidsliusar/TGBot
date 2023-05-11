@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 
@@ -30,7 +31,6 @@ def setup_and_teardown_db(monkeypatch):
     drop_database(mock_engine.url)
 
 
-
 class MockObjChat:
     def __init__(self, chat_id):
         self.id = chat_id
@@ -50,8 +50,15 @@ def mock_message():
 
 
 @pytest.fixture
-def mock_func():
+async def mock_func():
     def wrapper(instance, message):
+        return message.text
+    return wrapper
+
+
+@pytest.fixture
+def mock_coroutine():
+    async def wrapper(instance, message):
         return message.text
     return wrapper
 
@@ -89,9 +96,9 @@ class MockBeautifulSoup:
     def __init__(self, text, parser):
         self.text = text
         self.parser = parser
-        self.a = MockBS_tag()
-        self.center = MockBS_tag()
-        self.div = MockBS_tag()
+        self.a = MockBSTag()
+        self.center = MockBSTag()
+        self.div = MockBSTag()
 
     def find(self, *args):
         return self
@@ -102,10 +109,12 @@ class MockBeautifulSoup:
     def get_text(self, *args, **kwargs):
         return f'\"{self.text}\"'
 
-class MockBS_tag:
+
+class MockBSTag:
 
     def decompose(self):
         pass
+
 
 @pytest.fixture
 def set_session():
@@ -118,4 +127,26 @@ def set_session():
 def get_instance_mock_beauty_soup():
     return MockBeautifulSoup
 
+
+@pytest.fixture
+def mock_chat_response_writer():
+    @cache_module.db_cache.set_cache
+    async def wrapper(instance, message):
+        pattern = re.compile('(Continue the story in the same style:)|\\s')
+        mock_response = pattern.sub("", message.text)
+        return mock_response
+    return wrapper
+
+
+class StubGPT:
+
+    def __init__(self, text):
+        self.choices = [{'message': {'content': 'stub response from stub chat'}}]
+
+@pytest.fixture
+def mock_chat_request_writer():
+    async def wrapper(instance, message):
+        response = StubGPT(message)
+        return response
+    return wrapper
 

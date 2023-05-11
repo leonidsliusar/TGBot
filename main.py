@@ -1,5 +1,9 @@
+import asyncio
 import random
 import re
+import time
+
+import aiohttp
 from aiogram.types import InputFile
 from cache_module import quiz_cache
 from aiogram import Bot, Dispatcher, executor, types, filters
@@ -8,7 +12,7 @@ import os
 from gpt import GPTFactoryAssistant, GPTFactoryWriter
 import parser as sql
 from config import SYMBOLS_LENGTH_IN_BOOK as book_size
-from logging_config import logger
+from logging_config import logger_main
 
 load_dotenv()
 API_TOKEN = os.getenv('API_TELEGRAM')
@@ -16,6 +20,7 @@ bot = Bot(API_TOKEN)
 dp = Dispatcher(bot)
 assistant = GPTFactoryAssistant.get_gpt()
 writer = GPTFactoryWriter.get_gpt()
+logger = logger_main
 
 
 @dp.message_handler(commands=['help'])
@@ -117,7 +122,7 @@ async def tell_me_more(message: types.Message):
 @dp.message_handler(commands=['write'])
 async def gpt_writer(message: types.Message):
     try:
-        buffer = writer.get_book(message)
+        buffer = await writer.get_book(message)
         if not buffer:
             response_from_chat = 'Sorry I didn\'t catch the words. Can you tell me more detail'
             await message.reply(response_from_chat)
@@ -131,7 +136,7 @@ async def gpt_writer(message: types.Message):
 
 @dp.message_handler()
 async def chat_gpt(message: types.Message):
-    response_from_chat = assistant.chat_response(message)
+    response_from_chat = await assistant.chat_response(message)
     if not response_from_chat:
         response_from_chat = 'Sorry I didn\'t catch the words'
     await message.reply(response_from_chat)

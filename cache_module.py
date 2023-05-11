@@ -4,8 +4,10 @@ from typing import Optional, List, Callable, Any, Dict, Type
 from sqlalchemy import select, insert, desc, delete
 from sql_schema import Chat, Messages, session as ses
 from config import MAX_CAPACITY_MEM_CACHE
-from logging_config import logger
+from logging_config import logger_main
 
+
+logger = logger_main
 
 class Cache(ABC):
     __slots__ = ['cache']
@@ -40,8 +42,9 @@ class CacheMem(Cache):
         return res
 
     def set_cache(self, func: Callable[[Type[Messages]], str]) -> Callable[[Type[Messages]], str]:
-        def wrapper(instance, message) -> str:
-            res = func(instance, message)
+        async def wrapper(instance, message) -> str:
+            res = await func(instance, message)
+            logger.debug(f'Going to cache: {res}')
             if res:
                 if self.cache.get(message.chat.id, 0) == 0:
                     self.cache[message.chat.id] = deque()
@@ -49,7 +52,6 @@ class CacheMem(Cache):
                     self.cache[message.chat.id].popleft()
                 self.cache[message.chat.id].append(res)
             return res
-
         return wrapper
 
 
@@ -68,8 +70,8 @@ class CacheQuiz(Cache):
 class CacheDB(Cache):
 
     def set_cache(self, func: Callable[[Type[Messages]], str]) -> Callable[[Type[Messages]], str]:
-        def wrapper(instance, message):
-            res = func(instance, message)
+        async def wrapper(instance, message):
+            res = await func(instance, message)
             if res and type(res) == str:
                 chat_id = message.chat.id
                 message = res

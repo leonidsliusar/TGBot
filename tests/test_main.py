@@ -1,6 +1,9 @@
 import asyncio
 
 import pytest
+
+import cache_module
+import logging_config
 import main
 from main import greetings
 
@@ -26,6 +29,8 @@ class MockBot:
     (123, 'test'),
 ])
 async def test_instruction(message_id, text, monkeypatch):
+    monkeypatch.setattr(cache_module, 'logger', logging_config.logger_test)
+    monkeypatch.setattr(main, 'logger', logging_config.logger_test)
     monkeypatch.setattr(main, 'bot', MockBot())
     message = MockMessage(message_id, text)
     response = yield greetings(message)
