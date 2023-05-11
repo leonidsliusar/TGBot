@@ -17,7 +17,7 @@ Books rendering works asynchronous, so it doesn't block any feature. But keep in
 That's explain as db scheme consist of two relations. The first relation for save chats by id and the second to storing AI model's responses to specific user_id. 
 Sending request to write another book while bot haven't done previous just will mix it all in one rambling text.   
 
-#WARNING
+# WARNING
 #For 05.11.23 the AI model doesn't set optimal for render book. That's a reason why sometimes bot produce incoherent text.
 
 ![image](https://github.com/leonidsliusar/TGBot/assets/128726342/f3a26c8b-3b5f-4868-ba98-17a1384bcb88)
@@ -31,7 +31,7 @@ Before append new message in hashmap it checks for length of queue doesn't over 
 It's possible to set your desired capacity in config module:
 MAX_CAPACITY_MEM_CACHE = 50  # set 1 < capacity < MAX (measured in number of messages) to save context in memory(RAM)
 
-![image](https://github.com/leonidsliusar/TGBot/assets/128726342/419c2b07-2cb8-40e9-8e06-2596a0746c72)
+![image](https://github.com/leonidsliusar/TGBot/assets/128726342/297b25ee-c9cc-4b4f-9c92-829528389aee)
 
 # 3. One more feature it's the sql quiz.
 The parser login and make a request to special url, parses the response and send to user the question.
