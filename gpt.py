@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 import requests
 from dotenv import load_dotenv
@@ -10,7 +11,9 @@ import time
 from docx import Document
 from cache_module import memcache, db_cache
 from config import SYMBOLS_LENGTH_IN_BOOK, TEXT_REWRITE_ITERATION
-from logging_config import logger
+from logging_config import logger_main
+
+logger = logger_main
 
 
 class GPT(ABC):
@@ -24,8 +27,9 @@ class GPT(ABC):
         self.model_property = model_property
         self.content = content
 
-    def chat_request(self, message):
-        response = openai.ChatCompletion.create(
+    async def chat_request(self, message):
+        logger.debug(f'In chat_request {message}')
+        response = await openai.ChatCompletion.acreate(
             model=self.model_property['model'],
             messages=[{'role': 'user', 'content': message}, {'role': 'system', 'content': self.content}],
             temperature=self.model_property['temperature'],
@@ -47,14 +51,16 @@ class GPT(ABC):
 
 class GPTAssistant(GPT):
 
-    def chat_request(self, message):
+    async def chat_request(self, message):
         self.content = memcache.get_context(message.chat.id)
-        return super().chat_request(message.text)
+        logger.debug(f'Coming from cache: {self.content}')
+        return await super().chat_request(message.text)
 
     @memcache.set_cache
-    def chat_response(self, message):
-        response = self.chat_request(message)
+    async def chat_response(self, message):
+        response = await self.chat_request(message)
         deserialized_response = response.choices[0]['message']['content']
+        logger.warning(f'Going to cache {deserialized_response}')
         return deserialized_response
 
 
@@ -62,68 +68,69 @@ class GPTWriter(GPT):
     default_symbol_length = SYMBOLS_LENGTH_IN_BOOK
     iteration_quantity = TEXT_REWRITE_ITERATION
 
-    def rewrite_text(self, message):  # repeat the request for write text to AI a few time to improve text quality
-        response = self.chat_request(message.text)
+    async def rewrite_text(self, message):  # repeat the request for write text to AI a few time to improve text quality
+        response = await self.chat_request(message.text)
         n = 1
+        logger.info(f'Iteration quantity: {n}')
+        logger.info(f'Iteration quantity settings: {self.iteration_quantity}')
         while n != self.iteration_quantity:
             page_text = response.choices[0]['message']['content']
-            logger.info(f'Iteration in rewriter {n}: {page_text}')
             try:
-                response = self.chat_request(
+                response = await self.chat_request(
                     'Rewrite this text with more detail and fixing grammatical errors, but in the same style'
                     + page_text)
-                n += 1
             except RateLimitError:
                 logger.info('RateLimitError!!!!!')
                 time.sleep(40)
-                response = self.chat_request(
+                response = await self.chat_request(
                     'Rewrite this text with more detail and fixing grammatical errors, but in the same style'
                     + page_text)
-                n += 1
+            n += 1
+            logger.info(f'Iteration in rewriter {n}')
         return response
 
     @db_cache.set_cache
-    def chat_response_writer(self, message):  # sending request to AI, return only one page and caching it in DB
-        #response = self.chat_request(message.text)
-        response = self.rewrite_text(message)
+    async def chat_response_writer(self, message):  # sending request to AI, return only one page and caching it in DB
+        response = await self.chat_request(message.text)
         page = response.choices[0]['message']['content']
         return page
 
     def parse_message(self, message):  # parse message to three variable and return it to send_to_writer func
-        symbol_length = re.search('\d+', message.text)
-        pattern = re.compile('(\d+|symbols|/)')
+        symbol_length = re.search('\\d+', message.text)
+        pattern = re.compile('(\\d+|symbols|/)')
         message_text = pattern.sub('', message.text)
         message_content = re.sub(' +', ' ', message_text)
         book_size = int(symbol_length.group(0)) if symbol_length else self.default_symbol_length
         length_book = len(db_cache.get_context(message.chat.id, render_book=True))
         return book_size, message_content, length_book
 
-    def send_to_writer(self, message):  # sending request to continue the storyline until
+    async def send_to_writer(self, message):  # sending request to continue the storyline until
         book_size, message_content, length_book = self.parse_message(message)
         while length_book < book_size:
+            logger.debug(f'Cycle: {length_book} < {book_size}')
             if length_book == 0:
-                logger.debug(f'Book length: {length_book}')
                 message.text = message_content
             else:
                 chunk = db_cache.get_context(chat_id=message.chat.id, last_message_only=True)
                 message.text = 'Continue the story in the same style: ' + chunk
             try:
-                self.chat_response_writer(message)
+                await self.chat_response_writer(message)
                 logger.debug(message.text)
             except RateLimitError:
-                time.sleep(30)
-                self.chat_response_writer(message)
+                await asyncio.sleep(30)
+                await self.chat_response_writer(message)
             length_book = len(db_cache.get_context(message.chat.id, render_book=True))
+            logger.debug(f'Book Length from DB: {length_book}')
         return
 
-    def render_book(self, message):  # rendering the book
-        self.send_to_writer(message)
+    async def render_book(self, message):  # rendering the book
+        await self.send_to_writer(message)
         book = db_cache.get_context(message.chat.id, render_book=True)
         db_cache.flush_context(message.chat.id)
         return book
 
-    def get_book(self, message):  # send request to rendering book and return doc file as bytestring in buffer
-        book_string = self.render_book(message)
+    async def get_book(self, message):  # send request to rendering book and return doc file as bytestring in buffer
+        book_string = await self.render_book(message)
         logger.debug(book_string)
         book = Document()
         book.add_paragraph(book_string)
