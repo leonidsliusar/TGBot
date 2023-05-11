@@ -18,7 +18,7 @@ That's explain as db scheme consist of two relations. The first relation for sav
 Sending request to write another book while bot haven't done previous just will mix it all in one rambling text.   
 
 # WARNING
-#For 05.11.23 the AI model doesn't set optimal for render book. That's a reason why sometimes bot produce incoherent text.
+For 05.11.23 the AI model doesn't set optimal for render book. That's a reason why sometimes bot produce incoherent text.
 
 ![image](https://github.com/leonidsliusar/TGBot/assets/128726342/f3a26c8b-3b5f-4868-ba98-17a1384bcb88)
 
@@ -44,13 +44,13 @@ User can use /sql_answer and bot will send correct answer.
 ![image](https://github.com/leonidsliusar/TGBot/assets/128726342/526e4ed8-6919-4d97-9c0b-f873a83df0be)
 
 # Environment configuration
-API_TELEGRAM  # set API key for telegram 
-API_GPT  # set API key for openai
-ORGANIZATION  # set organization code for openai
-USERNAME_SQL  # set username to sql questions recource (https://www.sql-ex.com/?Lang=1)
-PASSWORD  #  set password to sql questions recource (https://www.sql-ex.com/?Lang=1)
-DB  # set DBMS ('postgres'|'mysql'|etc)
-DB_LOGIN  # set username of DB
-DB_PASS  # set password of DB
-DB_HOST  # set database's IP 
-DB_NAME  # set name of db
+API_TELEGRAM    |set API key for telegram (https://t.me/botfather)
+API_GPT         |set API key for openai (https://platform.openai.com/overview)
+ORGANIZATION    |set organization code for openai (https://platform.openai.com/overview)
+USERNAME_SQL    |set username to sql questions recource (https://www.sql-ex.com/?Lang=1)
+PASSWORD        |set password to sql questions recource (https://www.sql-ex.com/?Lang=1)
+DB              |set DBMS ('postgres'|'mysql'|etc)
+DB_LOGIN        |set username of DB ('postgres')
+DB_PASS         |set password of DB ('password')
+DB_HOST         |set database's IP  ('127.0.0.1')
+DB_NAME         |set name of db ('db_name')
