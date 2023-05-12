@@ -55,6 +55,7 @@ class GPTAssistant(GPT):
     async def chat_response(self, message):
         response = await self.chat_request(message)
         deserialized_response = response.choices[0]['message']['content']
+        logger.warning(f'Going to cache {deserialized_response}')
         return deserialized_response
 
 
@@ -65,6 +66,8 @@ class GPTWriter(GPT):
     async def rewrite_text(self, message):  # repeat the request for write text to AI a few time to improve text quality
         response = await self.chat_request(message.text)
         n = 1
+        logger.info(f'Iteration quantity: {n}')
+        logger.info(f'Iteration quantity settings: {self.iteration_quantity}')
         while n != self.iteration_quantity:
             page_text = response.choices[0]['message']['content']
             try:
@@ -97,6 +100,7 @@ class GPTWriter(GPT):
     async def send_to_writer(self, message):  # sending request to continue the storyline until
         book_size, message_content, length_book = self.parse_message(message)
         while length_book < book_size:
+            logger.debug(f'Cycle: {length_book} < {book_size}')
             if length_book == 0:
                 message.text = message_content
             else:
@@ -108,6 +112,7 @@ class GPTWriter(GPT):
                 await asyncio.sleep(30)
                 await self.chat_response_writer(message)
             length_book = len(db_cache.get_context(message.chat.id, render_book=True))
+            logger.debug(f'Book Length from DB: {length_book}')
         return
 
     async def render_book(self, message):  # rendering the book

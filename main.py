@@ -1,6 +1,8 @@
+
 from random import choice
 import re
 from parser import parser
+
 from aiogram.types import InputFile
 from cache_module import quiz_cache
 from aiogram import Bot, Dispatcher, executor, types, filters
@@ -9,12 +11,14 @@ import os
 from gpt import GPTFactoryAssistant, GPTFactoryWriter
 from config import SYMBOLS_LENGTH_IN_BOOK as book_size
 
+
 load_dotenv()
 API_TOKEN = os.getenv('API_TELEGRAM')
 bot = Bot(API_TOKEN)
 dp = Dispatcher(bot)
 assistant = GPTFactoryAssistant.get_gpt()
 writer = GPTFactoryWriter.get_gpt()
+logger = logger_main
 
 
 @dp.message_handler(commands=['help'])
