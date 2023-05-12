@@ -39,6 +39,7 @@ class CacheMem(Cache):
             res = ''
         return res
 
+
     def set_cache(self, func: Callable[[Type[Messages]], str]) -> typing.Coroutine:
         async def wrapper(instance, message) -> typing.Awaitable[Any]:
             res = await func(instance, message)

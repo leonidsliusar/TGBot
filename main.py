@@ -15,6 +15,7 @@ bot = Bot(API_TOKEN)
 dp = Dispatcher(bot)
 assistant = GPTFactoryAssistant.get_gpt()
 writer = GPTFactoryWriter.get_gpt()
+logger = logger_main
 
 
 @dp.message_handler(commands=['help'])
