@@ -1,5 +1,5 @@
 import pytest
-import logging_config
+import log_config
 from cache_module import CacheMem, CacheDB, quiz_cache
 import cache_module
 from gpt import GPTFactoryAssistant
@@ -13,8 +13,7 @@ class TestCacheMem:
                              [
                                  ('test1 test1 tests 1', 'tests 2 test2 test2', 'tests 3 test3', 1)
                              ])
-    async def test_memcache(self, monkeypatch, mock_coroutine, event_loop, mock_message, text1, text2, text3, chat_id):
-        monkeypatch.setattr(cache_module, 'logger', logging_config.logger_test)
+    async def test_memcache(self, mock_coroutine, event_loop, mock_message, text1, text2, text3, chat_id):
         cache = CacheMem()
         message1 = mock_message(text1, chat_id)
         message2 = mock_message(text2, chat_id)
@@ -30,7 +29,6 @@ class TestCacheMem:
     @pytest.mark.asyncio
     @pytest.mark.parametrize('capacity, chat_id', [(1, 'test0'), (70, 'test1'), (50, 'test2')])
     async def test_cache_capacity(self, capacity, monkeypatch, mock_coroutine, mock_message, chat_id):
-        monkeypatch.setattr(cache_module, 'logger', logging_config.logger_test)
         monkeypatch.setattr(CacheMem, '_MAX_CAPACITY', capacity)
         result_string = 'history of system response:\n'
         cache_list = []
@@ -49,7 +47,6 @@ class TestCacheMem:
     @pytest.mark.xfail(raises=ValueError)
     @pytest.mark.parametrize('capacity', [-5, 1.5, 'tests'])
     def test_constraint_memcache(self, capacity, monkeypatch):
-        monkeypatch.setattr(cache_module, 'logger', logging_config.logger_test)
         monkeypatch.setattr(CacheMem, '_MAX_CAPACITY', capacity)
         pass
 

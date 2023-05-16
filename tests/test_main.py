@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 import cache_module
-import logging_config
+import log_config
 import main
 from main import greetings
 

@@ -1,0 +1,34 @@
+version: '1'
+
+volumes:
+  postgres_volume:
+
+services:
+  bot:
+    build: .
+    container_name: tg_bot
+    restart: always
+    environment:
+      API_TELEGRAM: 5858098314:AAHbFk9UpgB7kT1-4296_KbBsLSzIt666v4
+      API_GPT: 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
+      ORGANIZATION: org-cswP5PMgOwlT1whZ63DfThh9
+      USERNAME_SQL: leo_qwerty
+      PASSWORD: 931220lh
+      DB: postgresql
+      DB_LOGIN: postgres
+      DB_PASS: postgres_pass
+      DB_HOST: postgres_server
+      DB_NAME: db_bot
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15.3-alpine
+    container_name: postgres_server
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_pass
+      POSTGRES_DB: db_bot

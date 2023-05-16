@@ -129,7 +129,6 @@ async def gpt_writer(message: types.Message):
         book = InputFile(buffer, filename='new_book.docx')
         await bot.send_document(chat_id=message.chat.id, document=book, caption='Your new book')
     except Exception as e:
-        logger.error(e)
         await bot.send_message(chat_id=message.chat.id, text='Server is down. Try later')
 
 

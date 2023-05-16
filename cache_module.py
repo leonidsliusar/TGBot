@@ -82,10 +82,8 @@ class CacheDB(Cache):
                                 ],
                             )
                             session.commit()
-                            logger.info('New context was add success')
                         except ValueError:
                             session.rollback()
-                            logger.debug(f'Invalid data {chat_id} {message}')
                     else:
                         try:
                             session.execute(
