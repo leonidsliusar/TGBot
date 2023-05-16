@@ -9,14 +9,14 @@ services:
     container_name: tg_bot
     restart: always
     environment:
-      API_TELEGRAM: 5858098314:AAHbFk9UpgB7kT1-4296_KbBsLSzIt666v4
-      API_GPT: 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
-      ORGANIZATION: org-cswP5PMgOwlT1whZ63DfThh9
-      USERNAME_SQL: leo_qwerty
-      PASSWORD: 931220lh
+      API_TELEGRAM: ${API_TELEGRAM}
+      API_GPT: ${API_GPT}
+      ORGANIZATION: ${ORGANIZATION}
+      USERNAME_SQL: ${USERNAME_SQL}
+      PASSWORD: ${PASSWORD}
       DB: postgresql
-      DB_LOGIN: postgres
-      DB_PASS: postgres_pass
+      DB_LOGIN: ${DB_LOGIN}
+      DB_PASS: ${DB_PASS}
       DB_HOST: postgres_server
       DB_NAME: db_bot
     depends_on:
@@ -29,6 +29,6 @@ services:
       - postgres_volume:/var/lib/postgresql/data
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres_pass
+      POSTGRES_USER: ${DB_LOGIN}
+      POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: db_bot
