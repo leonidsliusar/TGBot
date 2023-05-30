@@ -24,7 +24,7 @@ For 05.11.23 the AI model doesn't set optimal for render book. That's a reason w
 
 ![image](https://github.com/leonidsliusar/TGBot/assets/128726342/8d266ea4-5b3d-42b3-a8c7-c920069080d0)
 
-# 2. The bot abble to be in role as chat assistant. That's pretty classic exploitation of chatGPT.
+# 2. The bot able to be in role as chat assistant. That's pretty classic exploitation of chatGPT.
 Althought the AI model you can choose by API haven't memory, the app got a short-term memory in RAM. 
 It's implemented like a hash-map (Python's built-in dict) with chat_id as key and messages as elements of queue (Python's built-in deque).
 Before append new message in hashmap it checks for length of queue doesn't over settings length.
