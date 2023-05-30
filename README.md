@@ -1,6 +1,6 @@
 # TGBot
 
-# 1. The bot abble to be in role as writer. It generate text in one context from short-story to whole book.
+# 1. The bot able to be in role as writer. It generate text in one context from short-story to whole book.
 It generate book by the saving answer from AI in db and resend it to AI again in context: continue the story in same way. 
 Controller of bot is reacting to this command '/write' to start generate book.
 But user have to give some context at start. Such as a kind of story, style of writing, etc.
