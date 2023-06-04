@@ -4,7 +4,7 @@ from sqlalchemy.orm import declarative_base, Session
 from sqlalchemy import create_engine, Integer, ForeignKey, Text
 from dotenv import load_dotenv
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy_utils import create_database
 
 # Config
 load_dotenv()
@@ -12,7 +12,6 @@ login = os.getenv('DB_LOGIN')
 password = os.getenv('DB_PASS')
 host = os.getenv('DB_HOST')
 db_name = os.getenv('DB_NAME')
-
 
 engine = create_engine(f'postgresql://{login}:{password}@{host}/{db_name}', echo=True)
 Base = declarative_base()
@@ -27,6 +26,7 @@ class Chat(Base):
     def __repr__(self):
         return f'{self.chat_id}, {self.messages}'
 
+
 class Messages(Base):
     __tablename__ = 'messages'
 
@@ -38,8 +38,9 @@ class Messages(Base):
     def __repr__(self):
         return f'{self.id}, {self.message}'
 
+
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
-
+    create_database(engine.url)
 
 session = Session(engine)

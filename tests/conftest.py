@@ -64,15 +64,16 @@ def mock_coroutine():
 
 
 class MockSession:
-    __slots__ = ['url', 'data', 'headers', 'text']
+    __slots__ = ['url', 'data', 'headers', 'text', 'cookies']
 
     def __init__(self, text):
         self.url = None
         self.data = None
         self.headers = None
         self.text = text
+        self.cookies = text
 
-    def post(self, url, data, headers):
+    async def post(self, url, data, headers):
         self.url = url
         self.data = data
         self.headers = headers
@@ -118,7 +119,7 @@ class MockBSTag:
 
 @pytest.fixture
 def set_session():
-    def wrapper(text):
+    async def wrapper(text):
         return MockSession(text)
     return wrapper
 
